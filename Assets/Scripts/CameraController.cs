@@ -34,24 +34,38 @@ public class CameraController : MonoBehaviour
     void Update()
     {
         animatePawns();
+    }
 
+    private void LateUpdate()
+    {
+        CameraMove();
+        CameraRotate();
+    }
+
+    private void CameraMove() 
+    {
+        moveInput.x = Input.GetAxis("Vertical");
+        moveInput.y = Input.GetAxis("Horizontal");
+
+        Vector3 moveDir = (cameraHost.transform.forward * moveInput.x + cameraHost.transform.right * moveInput.y);
+
+        if (moveDir.magnitude > 1f)
+        {
+            moveDir = moveDir.normalized;
+        }
+
+        // moveDir = cameraHost.transform.TransformDirection(moveDir); 
+        cameraHost.transform.Translate(moveDir * cameraMoveSpeed * Time.deltaTime, Space.World);
+    }
+
+    private void CameraRotate() 
+    {
         if (Input.GetKeyUp(KeyCode.E))
             rotInput = 1;
         else if (Input.GetKeyUp(KeyCode.Q))
             rotInput = -1;
 
-        moveInput.x = Input.GetAxis("Vertical");
-        moveInput.y = Input.GetAxis("Horizontal");
-
-        Vector3 moveDir = (mainCam.transform.forward * moveInput.y + mainCam.transform.right * moveInput.x);
-        cameraHost.transform.Translate(moveDir * cameraMoveSpeed * Time.deltaTime);
-
-        checkRot();
-    }
-
-    private void checkRot() 
-    {
-        if (rotInput != 0 && smoothRotCoroutine == null) 
+        if (rotInput != 0 && smoothRotCoroutine == null)
         {
             smoothRotCoroutine = animateRotation(rotInput);
             StartCoroutine(smoothRotCoroutine);
@@ -68,7 +82,7 @@ public class CameraController : MonoBehaviour
         }
     }
 
-    IEnumerator animateRotation(int direction) 
+    private IEnumerator animateRotation(int direction) 
     {
         Quaternion old = cameraHost.transform.rotation;
         Quaternion target = Quaternion.Euler(0, old.eulerAngles.y + 90 * direction, 0);
@@ -89,5 +103,36 @@ public class CameraController : MonoBehaviour
         cameraHost.transform.rotation = target;
 
         smoothRotCoroutine = null;
+    }
+
+    private void CheckStaticSpriteGroups() 
+    {
+        // foreach spritegroup
+    }
+
+    class StaticSpriteGroup 
+    {
+        List<SpriteRenderer> sprites = new List<SpriteRenderer>();
+        private float yRot = 0f;
+
+        public StaticSpriteGroup(List<SpriteRenderer> _sprites, float _yRot) 
+        {
+            this.sprites.AddRange(_sprites);
+            this.yRot = _yRot;
+        }
+
+        public void AddSprite(SpriteRenderer sprite) 
+        {
+            sprites.Add(sprite);
+        }
+
+        private void flipSprites() 
+        {
+            foreach (SpriteRenderer sprite in sprites) 
+            {
+                sprite.flipX = !sprite.flipX;
+                sprite.gameObject.transform.Rotate(new Vector3(0f, 180f, 0f));
+            }
+        }
     }
 }
