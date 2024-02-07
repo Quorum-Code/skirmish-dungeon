@@ -18,6 +18,8 @@ public class SpriteHandler : MonoBehaviour
         pawnSprites.AddRange(GameObject.FindGameObjectsWithTag("Pawn"));
         staticObjects.AddRange(GameObject.FindGameObjectsWithTag("StaticSprite"));
 
+        Debug.Log(staticObjects[0].gameObject.name);
+
         for (int i = 0; i < staticObjects.Count; i++) 
         {
             SpriteRenderer sr = staticObjects[i].GetComponent<SpriteRenderer>();

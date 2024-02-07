@@ -22,7 +22,7 @@ public class NearCameraHandler : MonoBehaviour
 
     private void FixedUpdate()
     {
-        foreach (Fadeable f in changingFadeables) 
+        /*foreach (Fadeable f in changingFadeables) 
         {
             if (nearFadeables.Contains(f))
             {
@@ -48,20 +48,26 @@ public class NearCameraHandler : MonoBehaviour
             {
                 changingFadeables.Add(f);
             }
-        }
+        }*/
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.tag == wallTag) 
+        /*if (other.tag == wallTag) 
         {
             nearFadeables.Add(new Fadeable(other.gameObject));
+        }*/
+
+        WallTile wt = other.GetComponent<WallTile>();
+        if (wt) 
+        {
+            wt.FadeOut();
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.tag == wallTag)
+        /*if (other.tag == wallTag)
         {
             foreach (Fadeable f in nearFadeables) 
             {
@@ -71,6 +77,11 @@ public class NearCameraHandler : MonoBehaviour
                     return;
                 }
             }
+        }*/
+        WallTile wt = other.GetComponent<WallTile>();
+        if (wt)
+        {
+            wt.FadeIn();
         }
     }
 
