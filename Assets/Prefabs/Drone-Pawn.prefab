@@ -129,7 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8050766079476141635}
   - component: {fileID: 2359800121383388350}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Drone-Pawn
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -23,22 +23,27 @@ public class Selector : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        CheckCursorHover();
-
-        if (debugSelectedObject != null) 
+        if (Input.GetButtonDown("Fire1")) 
         {
-            MoveSelector(debugSelectedObject.transform.position);
-            debugSelectedObject = null;
+            CheckCursorHover();
         }
+
+        //if (debugSelectedObject != null) 
+        //{
+            //MoveSelector(debugSelectedObject.transform.position);
+            //debugSelectedObject = null;
+        //}
     }
 
     public void CheckCursorHover() 
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
-        if (Physics.Raycast(ray, out hit)) 
+        if (Physics.Raycast(ray, out hit, 100f, selectables)) 
         {
-            // Debug.Log("Hit: " + hit.collider.gameObject.layer);
+            Debug.Log(selectables.value);
+            Debug.Log("Hit: " + hit.collider.gameObject.name);
+            MoveSelector(hit.transform.position);
         }
     }
 
