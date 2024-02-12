@@ -14,7 +14,7 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
-  m_Fog: 1
+  m_Fog: 0
   m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_FogMode: 3
   m_FogDensity: 0.01
@@ -355,6 +355,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6446357200209534111, guid: 8a3bd19ee96f98540825faf639b9906b,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 465d4520623d8bd45bfca25093abfd1e, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1019,6 +1024,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6446357200209534111, guid: 8a3bd19ee96f98540825faf639b9906b,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 22d0e9d2b7329d04d87917909f6e2a31, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3086,6 +3096,10 @@ MonoBehaviour:
     type: 3}
   linePrefab: {fileID: 4601904896997093952, guid: f373df85617d89c4186113242f0aa04b,
     type: 3}
+  edgePrefab: {fileID: 0}
+  cornerPrefab: {fileID: 0}
+  narrowPrefab: {fileID: 0}
+  endPrefab: {fileID: 0}
 --- !u!4 &996467132 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3546753656679581797, guid: 8a3bd19ee96f98540825faf639b9906b,
@@ -3161,6 +3175,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6446357200209534111, guid: 8a3bd19ee96f98540825faf639b9906b,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 739d3cc6546e98042a93ff0998c76827, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3691,7 +3710,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   wallTag: StaticSprite
-  nearCollider: {fileID: 1261764100}
   alphaSpeed: 3
 --- !u!54 &1261764099
 Rigidbody:
@@ -5942,6 +5960,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4524030}
     m_Modifications:
+    - target: {fileID: 1923307018629127081, guid: 226b5470d6d98e44cb82df6d86185b9c,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: b0b2751a0c3a34a4da2655854457bceb, type: 2}
     - target: {fileID: 2766871242108637985, guid: 226b5470d6d98e44cb82df6d86185b9c,
         type: 3}
       propertyPath: m_LocalPosition.x

@@ -19,76 +19,138 @@ public class MapController : MonoBehaviour
     [SerializeField] GameObject narrowPrefab;
     [SerializeField] GameObject endPrefab;
 
-    Map map;
+    NodeGraph nodeMap;
 
     // Start is called before the first frame update
     void Start()
     {
-        NodeGraph g = new NodeGraph(8, 8);
-        g.BuildRoom(0, 0, 4, 4);
+        nodeMap = new NodeGraph(8, 8);
+        nodeMap.BuildRoom(0, 0, 4, 4);
+        nodeMap.BuildRoom(4, 0, 6, 7);
+        InstanceMap();
+    }
 
-        GNode gn = g.graph[0, 0];
+    private void FixedUpdate()
+    {
+        // draw node edges
+        DrawEdges();
+    }
 
-        /*map = new Map(8, 8);
-        map.floorArea(0, 0, 7, 7);
+    private void DrawEdges() 
+    {
+        Color debugColor = Color.green;
 
-        map.PathMap(new Vector2(3, 3), 1, 3);
-
-        DrawLine(new Vector2(), new Vector2(0, 3));
-
-        InstanceMap();*/
+        foreach (Node node in nodeMap.graph) 
+        {
+            if (node != null) 
+            {
+                if (node.up != null) Debug.DrawLine(node.position, node.up.position, debugColor);
+                if (node.down != null) Debug.DrawLine(node.position, node.down.position, debugColor);
+                if (node.right != null) Debug.DrawLine(node.position, node.right.position, debugColor);
+                if (node.left != null) Debug.DrawLine(node.position, node.left.position, debugColor);
+            }
+        }
     }
 
     private void InstanceMap()
     {
         GameObject g;
-        Cell cell = null;
-        for (int i = 0; i < map.cells.GetLength(0); i++)
+
+        // Iterate through nodes and create floor tiles
+        foreach (Node node in nodeMap.graph) 
         {
-            for (int j = 0; j < map.cells.GetLength(1); j++)
+            if (node != null) 
             {
-                cell = map.cells[i, j];
+                g = Instantiate(floorPrefab);
+                g.transform.position = node.position;
 
-                if (cell != null)
-                {
-                    g = Instantiate(floorPrefab);
-                    g.transform.position = new Vector3(cell.x, 0, cell.y);
-
-                    cell = null;
-                }
+                //node.SetTile(g);
+                //if (node.tile)
+                //    node.tile.FadeOut();
             }
         }
-    }
 
-    private void DrawOutline()
-    {
-        List<Node> nodes = new List<Node>();
-        Dictionary<Node, bool> traversedNodes = new Dictionary<Node, bool>();
-
-        Node up;
-        Node down;
-        Node right;
-        Node left;
-
-
-
-        while (nodes.Count > 0)
+        // Add bottom most walls
+        Vector3 wallOffset = new Vector3(0, 0, -0.5f);
+        for (int i = 0; i < nodeMap.graph.GetLength(0); i++) 
         {
-            // load neighbor nodes
+            Node node = nodeMap.graph[i, 0];
+            if (node != null) 
+            {
+                g = Instantiate(wallPrefab);
+                g.transform.position = node.position + wallOffset;
+                g.transform.rotation = Quaternion.Euler(0, 0, 0);
+            }
+        }
 
+        // Add left most walls
+        wallOffset = new Vector3(-0.5f, 0, 0);
+        for (int j = 0; j < nodeMap.graph.GetLength(1); j++) 
+        {
+            Node node = nodeMap.graph[0, j];
+            if (node != null)
+            {
+                g = Instantiate(wallPrefab);
+                g.transform.position = node.position + wallOffset;
+                g.transform.rotation = Quaternion.Euler(0, 90f, 0);
+            }
+        }
 
-            // determine neighboring nodes
+        // Iterate through all nodes, creating wall where 
+        Vector3 wallOffsetUp = new Vector3(0, 0, 0.5f);
+        Vector3 wallOffsetRight = new Vector3(0.5f, 0, 0);
+        for (int i = 0; i < nodeMap.graph.GetLength(0); i++) 
+        {
+            for (int j = 0; j < nodeMap.graph.GetLength(1); j++)
+            {
+                Node node = nodeMap.graph[i,j];
+                if (node != null)
+                {
+                    if (node.right == null)
+                    {
+                        g = Instantiate(wallPrefab);
+                        node.SetTile(g);
+                        g.transform.position = node.position + wallOffsetRight;
+                        g.transform.rotation = Quaternion.Euler(0, 90f, 0);
+                    }
 
-            // add neighboring nodes
+                    if (node.up == null)
+                    {
+                        g = Instantiate(wallPrefab);
+                        node.SetTile(g);
+                        g.transform.position = node.position + wallOffsetUp;
+                        g.transform.rotation = Quaternion.Euler(0, 0, 0);
+                    }
+                }
+                else
+                {
+                    if (i + 1 < nodeMap.graph.GetLength(0) && nodeMap.graph[i + 1, j] != null)
+                    {
+                        g = Instantiate(wallPrefab);
+                        // TODO: refactor so all nodes are populated but might not be pathables
+                        // if (node != null)
+                            // node.SetTile(g);
+                        g.transform.position = new Vector3(i, 0, j) + wallOffsetRight;
+                        g.transform.rotation = Quaternion.Euler(0, 90f, 0);
+                    }
 
-            // work queue
-            traversedNodes.Add(nodes[0], true);
-            nodes.RemoveAt(0);
+                    if (j + 1 < nodeMap.graph.GetLength(1) && nodeMap.graph[i, j + 1] != null)
+                    {
+                        g = Instantiate(wallPrefab);
+                        // TODO: refactor so all nodes are populated but might not be pathables
+                        // if (node != null)
+                            // node.SetTile(g);
+                        g.transform.position = new Vector3(i, 0, j) + wallOffsetUp;
+                        g.transform.rotation = Quaternion.Euler(0, 0, 0);
+                    }
+                }
 
-            up = null;
-            down = null;
-            right = null;
-            left = null;
+                /// TODO: Remove, only for debugging
+                if (node != null && node.tile != null) 
+                {
+                    //node.tile.FadeOut();
+                }
+            }
         }
     }
 
@@ -103,15 +165,16 @@ public class MapController : MonoBehaviour
 
     private class NodeGraph
     {
-        int width;
-        int length;
-        public GNode[,] graph { get; private set; }
+        public int width { get; private set; }
+        public int length { get; private set; }
+        public Node[,] graph { get; private set; }
+        private List<Edge> edges = new List<Edge>();
 
         public NodeGraph(int _width, int _length) 
         {
             width = _width;
             length = _length;
-            graph = new GNode[width, length];
+            graph = new Node[width, length];
         }
 
         public void BuildRoom(int x1, int y1 , int x2, int y2) 
@@ -137,7 +200,7 @@ public class MapController : MonoBehaviour
             {
                 for (int j = y1; j < y2; j++) 
                 {
-                    graph[i, j] = new GNode(i, j);
+                    graph[i, j] = new Node(i, j);
                 }
             }
 
@@ -146,10 +209,10 @@ public class MapController : MonoBehaviour
             {
                 for (int j = y1; j < y2; j++)
                 {
-                    GNode node = graph[i, j];
+                    Node node = graph[i, j];
 
-                    if (i - 1 >= 0 && i - 1 > x1) node.down = graph[i-1,j];
-                    if (i + 1 < graph.GetLength(0) && i + 1 < x2) node.up = graph[i+1,j];
+                    if (i - 1 >= 0 && i - 1 > x1) node.left = graph[i-1,j];
+                    if (i + 1 < graph.GetLength(0) && i + 1 < x2) node.right = graph[i+1,j];
                     if (j - 1 >= 0 && j - 1 > y1) node.down = graph[i, j - 1];
                     if (j + 1 < graph.GetLength(1) && j + 1 < y2) node.up = graph[i, j + 1];
                 }
@@ -157,210 +220,65 @@ public class MapController : MonoBehaviour
         }
     }
 
-    private class GNode 
+    public class Edge
     {
-        int x;
-        int y;
-        float moveCost = 1;
+        public Node a { get; private set; }
+        public Node b { get; private set; }
 
-        public GNode up;
-        public GNode down;
-        public GNode left;
-        public GNode right;
+        public bool isPassable { get; private set; } = false;
+        public bool isViewable { get; private set; } = false;
+        public float moveCost { get; private set; }
 
-        public GNode(int _x, int _y) 
+        public Tile tile;
+
+        public Edge(Node _a, Node _b, bool _passable, float _moveCost)
         {
-            x = _x;
-            y = _y;
+            a = _a;
+            b = _b;
+            isPassable = _passable;
+            moveCost = _moveCost;
+        }
+
+        public void SetNodes(Node _a, Node _b)
+        {
+            a = _a;
+            b = _b;
         }
     }
 
-    private class Map
+    public class Node 
     {
-        public Cell[,] cells;
-        public Wall[,] walls;
-
-        public int[,] pathMap;
-        public Vector2 pathStart;
-
-        public Map(int width, int length)
-        {
-            cells = new Cell[width, length];
-            walls = new Wall[width, length + 2];
-
-            pathMap = new int[width, length];
-        }
-
-        public void floorArea(int x1, int y1, int x2, int y2)
-        {
-            x1 = Mathf.Clamp(x1, 0, cells.GetLength(0));
-            x2 = Mathf.Clamp(x2, 0, cells.GetLength(0));
-            y1 = Mathf.Clamp(y1, 0, cells.GetLength(1));
-            y2 = Mathf.Clamp(y2, 0, cells.GetLength(1));
-
-            if (x1 > x2)
-            {
-                int t = x1;
-                x1 = x2;
-                x2 = t;
-            }
-
-            if (y1 > y2)
-            {
-                int t = y1;
-                y1 = y2;
-                y2 = t;
-            }
-
-            for (int i = x1; i <= x2; i++)
-            {
-                for (int j = y1; j <= y2; j++)
-                {
-                    cells[i, j] = new Cell(i, j);
-                }
-            }
-        }
-
-        public void PathMap(Vector2 start, float moveCost, float moveDist)
-        {
-            List<Node> nodes = new List<Node>();
-            nodes.Add(new Node(start.x, start.y));
-            pathMap[nodes[0].x, nodes[0].y] = 1;
-
-            while (nodes.Count > 0) 
-            {
-                Debug.Log("Processing node: " + nodes[0]);
-
-                AddNeighborNodes(nodes, moveCost, moveDist);
-                nodes.RemoveAt(0);
-            }
-        }
-
-        private void AddNeighborNodes(List<Node> nodes, float moveCost, float moveDist) 
-        {
-            Node currNode = nodes[0];
-
-            if (pathMap[currNode.x, currNode.y] + moveCost > moveDist) 
-            {
-                return;
-            }
-
-            // Up... in range, zero or greater than current + 1
-            if (currNode.y + 1 < pathMap.GetLength(1) && 
-                (pathMap[currNode.x, currNode.y+1] == 0 || pathMap[currNode.x, currNode.y + 1] > pathMap[currNode.x, currNode.y] + 1)) 
-            {
-                nodes.Add(new Node(currNode.x, currNode.y + 1));
-                pathMap[currNode.x, currNode.y + 1] = pathMap[currNode.x, currNode.y] + 1;
-            }
-
-            // Down... in range, zero or greater than current + 1
-            if (currNode.y - 1 >= 0 &&
-                (pathMap[currNode.x, currNode.y - 1] == 0 || pathMap[currNode.x, currNode.y - 1] > pathMap[currNode.x, currNode.y] + 1))
-            {
-                nodes.Add(new Node(currNode.x, currNode.y - 1));
-                pathMap[currNode.x, currNode.y - 1] = pathMap[currNode.x, currNode.y] + 1;
-            }
-
-            // Right... in range, zero or greater than current + 1
-            if (currNode.x + 1 < pathMap.GetLength(0) &&
-                (pathMap[currNode.x + 1, currNode.y] == 0 || pathMap[currNode.x + 1, currNode.y] > pathMap[currNode.x, currNode.y] + 1))
-            {
-                nodes.Add(new Node(currNode.x + 1, currNode.y));
-                pathMap[currNode.x + 1, currNode.y] = pathMap[currNode.x, currNode.y] + 1;
-            }
-
-            // Left... in range, zero or greater than current + 1
-            if (currNode.x - 1 >= 0 &&
-                (pathMap[currNode.x - 1, currNode.y] == 0 || pathMap[currNode.x - 1, currNode.y] > pathMap[currNode.x, currNode.y] + 1))
-            {
-                nodes.Add(new Node(currNode.x, currNode.y + 1));
-                pathMap[currNode.x - 1, currNode.y] = pathMap[currNode.x, currNode.y] + 1;
-            }
-        }
-
-        public List<Node> GetOutlineNodes() 
-        {
-            List<Node> outline = new List<Node>();
-            List<Node> queue = new List<Node>();
-
-            while (queue.Count > 0) 
-            {
-            
-            }
-
-            return outline;
-        }
-
-        public class Node
-        {
-            public int x { get; private set; }
-            public int y { get; private set; }
-            public float cost { get; private set; }
-
-            public Node(int _x, int _y) 
-            {
-                x = _x;
-                y = _y;
-            }
-
-            public Node(float _x, float _y) 
-            {
-                x = (int)_x;
-                y = (int)_y;
-            }
-
-            public override string ToString()
-            {
-                return "(" + x + ", " + y + ")";
-            }
-        }
-    }
-
-    private class Cell 
-    {
-        GameObject cellObject;
         public int x { get; private set; }
         public int y { get; private set; }
 
-        public Cell(int _x, int _y) 
+        public Tile tile;
+        public Node up;
+        public Node down;
+        public Node left;
+        public Node right;
+
+        public Vector3 position { get; private set; }
+        public float moveCost = 1;
+        public bool isPassable = true;
+        public Pawn pawn = null;
+        // TODO: interactable -> floor button, chests, objective
+
+        public Node(int _x, int _y) 
         {
-            x = _x; 
+            x = _x;
             y = _y;
+
+            position = new Vector3(x, 0, y);
         }
-    }
 
-    private class Wall 
-    {
-        GameObject wallObject;
-        public int x { get; private set; }
-        public int y { get; private set; }
-        public Vector2 position { get; protected set; }
+        public void SetTile(GameObject gameObject) 
+        {
+            tile = gameObject.GetComponent<Tile>();
+        }
 
-        public Wall() 
+        public void SetEdges() 
         {
             
-        }
-
-        public Wall(int _x, int _y)
-        {
-            x = _x;
-            y = _y;
-        }
-
-        public void PlaceWallUp(int _x, int _y)
-        {
-            x = _x;
-            y = _y * 2 + 2;
-
-            position = new Vector2(_x, _y + 0.5f);
-        }
-
-        public void PlaceWallDown(int _x, int _y)
-        {
-            x = _x;
-            y = _y * 2;
-
-            position = new Vector2(_x, _y - 0.5f);
         }
     }
 }

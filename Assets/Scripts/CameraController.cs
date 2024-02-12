@@ -61,9 +61,9 @@ public class CameraController : MonoBehaviour
     private void CameraRotate() 
     {
         if (Input.GetKeyUp(KeyCode.E))
-            rotInput = 1;
-        else if (Input.GetKeyUp(KeyCode.Q))
             rotInput = -1;
+        else if (Input.GetKeyUp(KeyCode.Q))
+            rotInput = 1;
 
         if (rotInput != 0 && smoothRotCoroutine == null)
         {
