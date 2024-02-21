@@ -23,8 +23,6 @@ public class Tile : MonoBehaviour
             Debug.LogError("Missing variable...");
             Destroy(this);
         }
-
-
     }
 
     public void ChangeState(bool known, bool fade) 
@@ -67,9 +65,15 @@ public class Tile : MonoBehaviour
         isKnown = _isKnown;
         isFaded = _isFaded;
 
+        render.material = target;
+
+        /*
         if (isKnown && isFaded) render.material = known_faded;
         else if (!isKnown && isFaded) render.material = unknown_faded;
         else if (isKnown && !isFaded) render.material = known;
         else if (!isKnown && !isFaded) render.material = unknown;
+        */
+
+        Debug.Log("Finished coroutine");
     }
 }

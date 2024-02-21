@@ -5,6 +5,7 @@ using Unity.VisualScripting;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static MapController;
 
 public class MapController : MonoBehaviour
 {
@@ -25,29 +26,53 @@ public class MapController : MonoBehaviour
     void Start()
     {
         nodeMap = new NodeGraph(8, 8);
-        nodeMap.BuildRoom(0, 0, 4, 4);
-        nodeMap.BuildRoom(4, 0, 6, 7);
+        nodeMap.BuildRoom(0, 0, 3, 3);
+        // nodeMap.BuildRoom(4, 0, 6, 7);
         InstanceMap();
+
+        int count = 0;
+        foreach (Edge edge in nodeMap.edges) 
+        {
+            count++;
+        }
+        Debug.Log(count);
     }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.green;
+        Vector3 size = new Vector3(0.25f, 0.25f, 0.25f);
+        if (nodeMap != null) 
+        {
+            foreach (Node node in nodeMap.graph)
+            {
+                if (node != null)
+                    Gizmos.DrawCube(new Vector3(node.x, node.y, node.z), size);
+            }
+        }
+    }
+
 
     private void FixedUpdate()
     {
-        // draw node edges
-        DrawEdges();
+        DebugLines();
     }
 
-    private void DrawEdges() 
+    private void DebugLines() 
     {
-        Color debugColor = Color.green;
-
-        foreach (Node node in nodeMap.graph) 
+        if (nodeMap.graph != null) 
         {
-            if (node != null) 
+            foreach (Edge e in nodeMap.edges) 
             {
-                if (node.up != null) Debug.DrawLine(node.position, node.up.position, debugColor);
-                if (node.down != null) Debug.DrawLine(node.position, node.down.position, debugColor);
-                if (node.right != null) Debug.DrawLine(node.position, node.right.position, debugColor);
-                if (node.left != null) Debug.DrawLine(node.position, node.left.position, debugColor);
+                if (e.isPassable)
+                {
+                    Debug.DrawLine(e.aPos, e.bPos, Color.blue);
+                }
+                else 
+                {
+                    Debug.DrawLine(e.aPos, e.bPos, Color.red);
+                }
+                
             }
         }
     }
@@ -168,7 +193,7 @@ public class MapController : MonoBehaviour
         public int width { get; private set; }
         public int length { get; private set; }
         public Node[,] graph { get; private set; }
-        private List<Edge> edges = new List<Edge>();
+        public List<Edge> edges = new List<Edge>();
 
         public NodeGraph(int _width, int _length) 
         {
@@ -204,6 +229,92 @@ public class MapController : MonoBehaviour
                 }
             }
 
+            void addEdges(Node curr) 
+            {
+                int x = curr.x;
+                int z = curr.z;
+
+                if (curr.up == null) 
+                {
+                    curr.up = generateEdge(curr, new int[] { x, 0, z + 1 });
+                    if (curr.up.b != null) curr.up.b.down = curr.up;
+                }
+
+                if (curr.upRight == null) 
+                {
+                    curr.upRight = generateEdge(curr, new int[] { x + 1, 0, z + 1 });
+                    if (curr.upRight.b != null) curr.upRight.b.downLeft = curr.upRight;
+                }
+                
+                if (curr.right == null)
+                {
+                    curr.right = generateEdge(curr, new int[] { x + 1, 0, z });
+                    if (curr.right.b != null) curr.right.b.left = curr.right;
+                }
+                
+                if (curr.downRight == null)
+                {
+                    curr.downRight = generateEdge(curr, new int[] { x + 1, 0, z - 1 });
+                    if (curr.downRight.b != null) curr.downRight.b.upLeft = curr.downRight;
+                }
+
+                if (curr.down == null)
+                {
+                    curr.down = generateEdge(curr, new int[] { x, 0, z - 1 });
+                    if (curr.down.b != null) curr.down.b.up = curr.down;
+                }
+
+                if (curr.downLeft == null)
+                {
+                    curr.downLeft = generateEdge(curr, new int[] { x - 1, 0, z - 1 });
+                    if (curr.downLeft.b != null) curr.downLeft.b.upRight = curr.downLeft;
+                }
+
+                if (curr.left == null)
+                {
+                    curr.left = generateEdge(curr, new int[] { x - 1, 0, z });
+                    if (curr.left.b != null) curr.left.b.right = curr.left;
+                }
+                
+                if (curr.upLeft == null)
+                {
+                    curr.upLeft = generateEdge(curr, new int[] { x - 1, 0, z + 1 });
+                    if (curr.upLeft.b != null) curr.upLeft.b.downRight = curr.upLeft;
+                }
+            }
+            Edge generateEdge(Node currnode, int[] pos) 
+            {
+                // In bounds
+                if (pos[0] >= 0 && pos[0] < graph.GetLength(0) &&
+                    pos[2] >= 0 && pos[2] < graph.GetLength(1) &&
+                    graph[pos[0], pos[2]] != null)
+                {
+                    Node nextnode = graph[pos[0], pos[2]];
+                    // Within room: make pathable
+                    if (nextnode.x >= x1 && nextnode.x < x2 &&
+                        nextnode.z >= y1 && nextnode.y < y2) 
+                    {
+                        Edge edge = new Edge(currnode, nextnode, true, 0f);
+                        edges.Add(edge);
+                        return edge;
+                    }
+                    // Not within room: add wall
+                    else 
+                    {
+                        Edge edge = new Edge(currnode, nextnode, false, 0f);
+                        edges.Add(edge);
+                        return edge;
+                    }
+                }
+                // Out of bounds: create empty edge with wall
+                else 
+                {
+                    Edge edge = new Edge(currnode, new Vector3(pos[0], pos[1], pos[2]));
+                    edges.Add(edge);
+                    return edge;
+                }
+            }
+
             // Iterate through all nodes and create connections
             for (int i = x1; i < x2; i++)
             {
@@ -211,10 +322,8 @@ public class MapController : MonoBehaviour
                 {
                     Node node = graph[i, j];
 
-                    if (i - 1 >= 0 && i - 1 > x1) node.left = graph[i-1,j];
-                    if (i + 1 < graph.GetLength(0) && i + 1 < x2) node.right = graph[i+1,j];
-                    if (j - 1 >= 0 && j - 1 > y1) node.down = graph[i, j - 1];
-                    if (j + 1 < graph.GetLength(1) && j + 1 < y2) node.up = graph[i, j + 1];
+                    // Check if neighboring nodes
+                    addEdges(node);
                 }
             }
         }
@@ -224,10 +333,12 @@ public class MapController : MonoBehaviour
     {
         public Node a { get; private set; }
         public Node b { get; private set; }
+        public Vector3 aPos { get; private set; }
+        public Vector3 bPos { get; private set; }
 
         public bool isPassable { get; private set; } = false;
-        public bool isViewable { get; private set; } = false;
-        public float moveCost { get; private set; }
+        public bool isInView { get; private set; } = false;
+        public float moveCost { get; private set; } = 1f;
 
         public Tile tile;
 
@@ -235,8 +346,19 @@ public class MapController : MonoBehaviour
         {
             a = _a;
             b = _b;
+            aPos = a.position;
+            bPos = b.position;
             isPassable = _passable;
             moveCost = _moveCost;
+        }
+
+        public Edge(Node _a, Vector3 _bPos) 
+        {
+            a = _a;
+            aPos = _a.position;
+            bPos = _bPos;
+            isPassable = false;
+            moveCost = 0f;
         }
 
         public void SetNodes(Node _a, Node _b)
@@ -250,12 +372,18 @@ public class MapController : MonoBehaviour
     {
         public int x { get; private set; }
         public int y { get; private set; }
+        public int z { get; private set; }
 
         public Tile tile;
-        public Node up;
-        public Node down;
-        public Node left;
-        public Node right;
+
+        public Edge up;
+        public Edge upRight;
+        public Edge right;
+        public Edge downRight;
+        public Edge down;
+        public Edge downLeft;
+        public Edge left;
+        public Edge upLeft;
 
         public Vector3 position { get; private set; }
         public float moveCost = 1;
@@ -263,12 +391,12 @@ public class MapController : MonoBehaviour
         public Pawn pawn = null;
         // TODO: interactable -> floor button, chests, objective
 
-        public Node(int _x, int _y) 
+        public Node(int _x, int _z) 
         {
             x = _x;
-            y = _y;
+            z = _z;
 
-            position = new Vector3(x, 0, y);
+            position = new Vector3(x, 0, z);
         }
 
         public void SetTile(GameObject gameObject) 
